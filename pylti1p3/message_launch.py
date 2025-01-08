@@ -4,6 +4,7 @@ import json
 import typing as t
 import uuid
 from abc import ABCMeta, abstractmethod
+from datetime import timedelta
 
 import jwt  # type: ignore
 import requests
@@ -191,6 +192,7 @@ class MessageLaunch(t.Generic[REQ, TCONF, SES, COOK]):
     _cookie_service: COOK
     _jwt: TJwtData
     _jwt_verify_options: t.Dict[str, bool]
+    _jwt_leeway: float | timedelta = 0
     _registration: t.Optional[Registration]
     _launch_id: str
     _validated: bool = False
@@ -253,6 +255,10 @@ class MessageLaunch(t.Generic[REQ, TCONF, SES, COOK]):
 
     def set_jwt_verify_options(self, val: t.Dict[str, bool]) -> "MessageLaunch":
         self._jwt_verify_options = val
+        return self
+
+    def set_jwt_leeway(self, val: float | timedelta) -> "MessageLaunch":
+        self._jwt_leeway = val
         return self
 
     def set_restored(self) -> "MessageLaunch":
@@ -717,6 +723,7 @@ class MessageLaunch(t.Generic[REQ, TCONF, SES, COOK]):
                 public_key,
                 algorithms=[key_alg],
                 options=self._jwt_verify_options,
+                leeway=self._jwt_leeway,
             )
         except jwt.InvalidTokenError as e:
             raise LtiException(f"Can't decode id_token: {str(e)}") from e
